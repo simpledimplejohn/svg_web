@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000000;
+      color: #ffffff;
+    }
+
+    /* Simple dark mode for all elements */
+    html,
+    body,
+    input,
+    button,
+    select,
+    textarea {
+      background-color: #111 !important;
+      color: #fff !important;
+      border: 1px solid #444;
+    }
+
+    input,
+    button,
+    select,
+    textarea {
+      background-color: #222 !important;
+      color: #fff !important;
+      border-radius: 4px;
+      border: 1px solid #444;
+      padding: 4px 8px;
+    }
+
+    input:focus,
+    button:focus,
+    select:focus,
+    textarea:focus {
+      outline: 2px solid #00b3ff;
+    }
+
+    label {
+      color: #fff;
+    }
+
+    /* Ensure all text elements are white by default */
+    *,
+    *::before,
+    *::after {
+      color: #ffffff;
+      box-sizing: border-box;
+    }
+
+    #process-tunnel {
+      position: relative;
+      display: block;
+      margin: 0;
+      padding: 0;
+    }
+
+    #bucket-svg {
+      display: block;
+      margin: 0;
+      padding: 0;
+      width: 500px;
+      height: auto;
+    }
+
+    #height-form-container {
+      position: static;
+      margin-top: 20px;
+      color: #fff;
+    }
+
+    #height-form {
+      display: flex;
+      align-items: center;
+    }
+
+    #height-input {
+      width: 60px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="process-tunnel">
+    <object id="bucket-svg" type="image/svg+xml" data="public/img/container_two.svg"></object>
+  </div>
+
+  <div id="height-form-container">
+    <form id="height-form">
+      <label for="height-input">Set Height (0-99): </label>
+      <input type="number" id="height-input" name="height_var" min="0" max="99" value="99">
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+  <div id="height-form-container">
+    <form id="height-form-2">
+      <label for="height-input-2">Set Height 2 (0-99): </label>
+      <input type="number" id="height-input-2" name="height_var-2" min="0" max="99" value="0">
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+  <div id="height-form-container">
+    <form id="speed-form">
+      <label for="speed-input">Set speed (0-99): </label>
+      <input type="number" id="speed-input" name="speed_var" min="0" max="99" value="50">
+      <button type="submit">Submit</button>
+    </form>
+  </div> 
+  <script>
+    // Variable between 0 and 99
+    let height_var = 0; // You can update this value dynamically as needed
+    let height_var_2 = 0; // You can update this value dynamically as needed
+    let speed_var = 50; // Default speed
+
+    // Wait for SVG to load, then animate the wave
+    const svgObject = document.getElementById('bucket-svg');
+    svgObject.addEventListener('load', function () {
+      const svgDoc = svgObject.contentDocument;
+      const wave = svgDoc.getElementById('wave');
+      const wave2 = svgDoc.getElementById('wave_2');
+      const container = svgDoc.getElementById('container');
+      const arrow1 = svgDoc.getElementById('arrow_1');
+      if (wave && container) {
+        // Get the top and bottom Y positions from the container path
+        // container path: M219.5796,333.5186 L219.5796,514.6981 L340.3659,514.6981 L340.3659,333.5186
+        const topY = 200;
+        const bottomY = 0;
+
+        let t = 0;
+        let arrowOffset = 0;
+        let arrowDirection = 1;
+        let arrowAnimating = false;
+        function animateWave() {
+          // Animate the wave path's vertical position for a simple effect
+          const amplitude = 5;
+          const freq = 0.05;
+          // Calculate vertical position based on height_var
+          // When height_var=0, wave at bottom; when height_var=100, wave at top
+          const yPos = bottomY - ((bottomY - topY) * (height_var / 100));
+          // Add animation wiggle
+          const animatedY = yPos + Math.sin(t * freq) * amplitude;
+          wave.setAttribute('transform', `translate(0, ${animatedY - 23.57277})`); // 23.57277 is the original Y of wave
+
+          // Animate wave_2 if present
+          if (wave2) {
+            const yPos2 = bottomY - ((bottomY - topY) * (height_var_2 / 100));
+            const animatedY2 = yPos2 + Math.sin(t * freq) * amplitude;
+            wave2.setAttribute('transform', `translate(0, ${animatedY2 - 23.57277})`); // 23.57277 is the original Y of wave_2
+          }
+
+          // Animate arrow_1
+          if (arrow1) {
+            if (!arrowAnimating) {
+              arrowAnimating = true;
+              arrowOffset = 0;
+              arrowDirection = 1;
+            }
+            // Map speed_var (0-99) to a pixel increment (0 = 0, 99 = 10)
+            let arrowSpeed = (speed_var / 99) * 10; // 0 to 10 px per frame
+            if (speed_var === 0) arrowSpeed = 0;
+            arrowOffset += arrowSpeed * arrowDirection;
+            if (arrowOffset >= 100) {
+              arrowOffset = 0;
+            }
+            arrow1.setAttribute('transform', `translate(${arrowOffset}, 0)`);
+          }
+
+          t++;
+          requestAnimationFrame(animateWave);
+        }
+        animateWave();
+      }
+    });
+
+    // Handle form submission
+    document.getElementById('height-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = document.getElementById('height-input');
+      let val = parseInt(input.value, 10);
+      if (isNaN(val)) val = 0;
+      if (val < 0) val = 0;
+      if (val > 99) val = 99;
+      height_var = val;
+    });
+    document.getElementById('height-form-2').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = document.getElementById('height-input-2');
+      let val = parseInt(input.value, 10);
+      if (isNaN(val)) val = 0;
+      if (val < 0) val = 0;
+      if (val > 99) val = 99;
+      height_var_2 = val;
+    });
+    document.getElementById('speed-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = document.getElementById('speed-input');
+      let val = parseInt(input.value, 10);
+      if (isNaN(val)) val = 0;
+      if (val < 0) val = 0;
+      if (val > 99) val = 99;
+      speed_var = val;
+    });
+  </script>
+</body>
+
+</html>
